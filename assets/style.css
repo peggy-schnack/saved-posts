@@ -101,3 +101,4 @@ details.cap summary{cursor:pointer;font-weight:650;color:var(--muted);font-size:
   .tile.big{grid-column:span 2}
   .quick{max-width:560px}
 }
+@media (max-width:759px){.tiles .tile:not(.big):last-child:nth-child(odd){grid-column:1/-1}}

@@ -5,7 +5,6 @@ var POSTS = D.posts;
 var META = {
   "Recipes":{e:"🍲",s:"recipes",d:"Meal ideas, all in one place"},
   "Workouts":{e:"💪",s:"workouts",d:"Your saved workouts, sorted by focus"},
-  "Pregnancy & Postpartum":{e:"🤰",s:"pregnancy-postpartum",d:"Core rehab, birth prep & recovery"},
   "Baby & Parenting":{e:"👶",s:"baby-parenting",d:"Newborn, toddler & mom life"},
   "Weddings":{e:"💍",s:"weddings",d:"Dresses, flowers & inspo"},
   "Money & Career":{e:"💼",s:"money-career",d:"Finance, side hustles & tech"},
@@ -58,7 +57,6 @@ function badges(p){
     b.push('<span class="badge">'+esc(w.body_focus)+'</span>');
     b.push('<span class="badge">'+esc(w.equipment==='None'?'No equipment':w.equipment)+'</span>');
     if(w.exercises.length) b.push('<span class="badge hp">Exercises listed</span>');
-    if(w.pregnancy_postpartum && p.category!=='Pregnancy & Postpartum') b.push('<span class="badge">Pregnancy/PP</span>');
   } else if(p.subcategory){
     b.push('<span class="badge">'+esc(p.subcategory)+'</span>');
   }
@@ -189,7 +187,7 @@ function renderCategory(cat){
   base=base.slice().sort(function(a,b){
     var ka,kb;
     if(cat==='Recipes'){ka=oi(MO,a.recipe.meal_type);kb=oi(MO,b.recipe.meal_type);}
-    else if(cat==='Workouts'){ka=oi(FO,a.workout.body_focus)+(a.workout.pregnancy_postpartum?50:0);kb=oi(FO,b.workout.body_focus)+(b.workout.pregnancy_postpartum?50:0);}
+    else if(cat==='Workouts'){ka=oi(FO,a.workout.body_focus);kb=oi(FO,b.workout.body_focus);}
     else {ka=a.subcategory;kb=b.subcategory;}
     if(ka<kb) return -1; if(ka>kb) return 1;
     return a.title.localeCompare(b.title);
@@ -212,7 +210,6 @@ function renderCategory(cat){
         if(st.full && r.recipe_in_caption!=='full') return false;
       } else if(cat==='Workouts'){
         var w=p.workout;
-        if(!st.pp && w.pregnancy_postpartum) return false;
         if(st.focus && w.body_focus!==st.focus) return false;
         if(st.equip && w.equipment!==st.equip) return false;
         if(st.ex && !w.exercises.length) return false;
@@ -230,26 +227,24 @@ function renderCategory(cat){
       f+=chipGroup('Cook method','method',countBy(base,function(p){return p.recipe.cook_method;}),st,["Crockpot","Sheet pan","Air fryer","One-pot / one-pan","Oven-baked","Stovetop","No-cook / no-bake","Freezer meal","Meal prep"]);
       f+='<div class="fgroup"><div class="chips">'+toggleChip('💪 High-protein','hp',st)+toggleChip('📝 Full recipe in caption','full',st)+'</div></div>';
     } else if(cat==='Workouts'){
-      var pool=base.filter(function(p){return st.pp||!p.workout.pregnancy_postpartum;});
+      var pool=base;
       f+=chipGroup('Body focus','focus',countBy(pool,function(p){return p.workout.body_focus;}),st,["Full Body","Legs & Glutes","Core & Abs","Upper Body","Cardio & HIIT","Splits & Programs","Mobility & Stretching"]);
       f+=chipGroup('Equipment','equip',countBy(pool,function(p){return p.workout.equipment;}),st,["None","Dumbbells","Gym"]);
-      var ppn=base.filter(function(p){return p.workout.pregnancy_postpartum;}).length;
-      f+='<div class="fgroup"><div class="chips">'+toggleChip('📋 Has exercise list','ex',st)+toggleChip('🤰 Include pregnancy & postpartum ('+ppn+')','pp',st)+'</div></div>';
+      f+='<div class="fgroup"><div class="chips">'+toggleChip('📋 Has exercise list','ex',st)+'</div></div>';
     } else {
       var sc=countBy(base,function(p){return p.subcategory;});
       if(Object.keys(sc).length>1) f+=chipGroup('Type','sub',sc,st);
     }
     var fe=document.getElementById('filters'); fe.innerHTML=f;
     fe.querySelectorAll('.chip[data-k]').forEach(function(b){ b.onclick=function(){ st[b.dataset.k]=b.dataset.v||''; drawFilters(); draw(); }; });
-    fe.querySelectorAll('.chip[data-t]').forEach(function(b){ b.onclick=function(){ st[b.dataset.t]=!st[b.dataset.t]; if(b.dataset.t==='pp'){st.focus='';st.equip='';} drawFilters(); draw(); }; });
+    fe.querySelectorAll('.chip[data-t]').forEach(function(b){ b.onclick=function(){ st[b.dataset.t]=!st[b.dataset.t]; drawFilters(); draw(); }; });
   }
   function draw(){
     var res=filtered();
-    var total=cat==='Workouts'&&!st.pp ? base.filter(function(p){return !p.workout.pregnancy_postpartum;}).length : base.length;
+    var total=base.length;
     document.getElementById('cnt').textContent=res.length+(res.length===total?'':' of '+total);
     var info='';
     if(res.length!==total) info=res.length+' match'+(res.length===1?'':'es');
-    else if(cat==='Workouts'&&!st.pp) info=total+' workouts · pregnancy & postpartum moves are under the 🤰 toggle';
     document.getElementById('info').textContent=info;
     document.getElementById('list').innerHTML = res.length ? res.map(function(p){return cardHTML(p,false);}).join('') : '<div class="empty">No saves match these filters.</div>';
     return res;
